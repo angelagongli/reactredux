@@ -50,7 +50,17 @@ function Board(props) {
                 Chosen Destination: {chosenDestination}
             </div>
             {piecesAll.map((row, index) => (
-                <Row rowIndex={index} pieces={row} highlightPiece={highlightPiece} clickCell={clickCell} />
+                <div>
+                    <Row rowIndex={index} pieces={row} highlightPiece={highlightPiece} clickCell={clickCell} />
+                    {/* Add 楚河/Chu River boundary in the middle of the 象棋/Elephant Chess board */}
+                    {index === 4 ?
+                    <div className="row justify-content-center g-0">
+                        <div className="col-3 chuRiver">楚河/Chu River</div>
+                        <div className="col-3 chuRiver"></div>
+                        <div className="col-3 chuRiver">汉界/Border of the Han</div>
+                    </div>
+                    : ""}
+                </div>
             ))}
         </Container>
     );
