@@ -1,11 +1,30 @@
 module.exports = function(sequelize, DataTypes) {
     const Piece = sequelize.define("Piece", {
-        name: DataTypes.STRING,
-        type: DataTypes.STRING,
-        side: DataTypes.ENUM("Dad", "Me"),
-        row: DataTypes.INTEGER,
-        column: DataTypes.INTEGER,
-        isTaken: DataTypes.BOOLEAN
+        name: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        type: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        side: {
+            type: DataTypes.ENUM("Dad", "Me"),
+            allowNull: false
+        },
+        row: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        column: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        isTaken: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
+        }
     });
     return Piece;
 };
