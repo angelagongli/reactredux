@@ -3,8 +3,9 @@ import { Container } from '@material-ui/core';
 import Row from "./Row";
 
 function Board(props) {
+    // Will have to make way to translate your piece's name/side saved in DB into the correct traditional character
     const [piecesAll, setPiecesAll] = useState([
-        ["車/Chariot (Rook)", "馬/Horse (Knight)", "象/Elephant (Bishop)", "士/Advisor", "将/General (King)", "士/Advisor", "象/Elephant (Bishop)", "馬/Horse (Knight)", "車/Chariot (Rook)"],
+        ["車/Chariot (Rook)", "馬/Horse (Knight)", "象/Elephant (Bishop)", "士/Advisor", "將/General (King)", "士/Advisor", "象/Elephant (Bishop)", "馬/Horse (Knight)", "車/Chariot (Rook)"],
         ["", "", "", "", "", "", "", "", ""],
         ["", "砲/Cannon", "", "", "", "", "", "砲/Cannon", ""],
         ["卒/Soldier (Pawn)", "", "卒/Soldier (Pawn)", "", "卒/Soldier (Pawn)", "", "卒/Soldier (Pawn)", "", "卒/Soldier (Pawn)"],
@@ -18,6 +19,10 @@ function Board(props) {
     const [highlightedPiece, setHighlightedPiece] = useState("");
     const [chosenPiece, setChosenPiece] = useState("");
     const [chosenDestination, setChosenDestination] = useState("");
+
+    function populateBoard() {
+        // Populate Board with All Pieces (where !isTaken) Saved in DB
+    }
 
     function highlightPiece(pieceID) {
         // Keep Legal Move Highlighting in Local State
@@ -40,6 +45,7 @@ function Board(props) {
 
     function makeMove() {
         // @TODO: Ascertain Move Legality Based on Rule Computation
+        // since nothing will trying prevent from clicking an illegal move destination cell
     }
     
     return (
