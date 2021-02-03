@@ -1,14 +1,39 @@
 module.exports = function(sequelize, DataTypes) {
     const Move = sequelize.define("Move", {
-        pieceID: DataTypes.INTEGER,
+        pieceID: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
         // (Mover is technically contained in pieceID:)
         mover: DataTypes.ENUM("Dad", "Me"),
-        startRow: DataTypes.INTEGER,
-        startColumn: DataTypes.INTEGER,
-        destinationRow: DataTypes.INTEGER,
-        destinationColumn: DataTypes.INTEGER,
+        startRow: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        startColumn: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        destinationRow: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        destinationColumn: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
         pieceTaken: DataTypes.BOOLEAN,
-        pieceTakenID: DataTypes.INTEGER
+        pieceTakenID: DataTypes.INTEGER,
+        createdAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: sequelize.fn('NOW')
+        },
+        updatedAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: sequelize.fn('NOW')
+        }
     });
 
     Move.associate = function(models) {
