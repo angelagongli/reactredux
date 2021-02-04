@@ -1,27 +1,90 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container } from '@material-ui/core';
 import Row from "./Row";
+import API from "../utils/API";
 
 function Board(props) {
     // Will have to make way to translate your piece's name/side saved in DB into the correct traditional character
-    const [piecesAll, setPiecesAll] = useState([
-        ["車/Chariot (Rook)", "馬/Horse (Knight)", "象/Elephant (Bishop)", "士/Advisor", "將/General (King)", "士/Advisor", "象/Elephant (Bishop)", "馬/Horse (Knight)", "車/Chariot (Rook)"],
-        ["", "", "", "", "", "", "", "", ""],
-        ["", "砲/Cannon", "", "", "", "", "", "砲/Cannon", ""],
-        ["卒/Soldier (Pawn)", "", "卒/Soldier (Pawn)", "", "卒/Soldier (Pawn)", "", "卒/Soldier (Pawn)", "", "卒/Soldier (Pawn)"],
-        ["", "", "", "", "", "", "", "", ""],
-        ["", "", "", "", "", "", "", "", ""],
-        ["兵/Soldier (Pawn)", "", "兵/Soldier (Pawn)", "", "兵/Soldier (Pawn)", "", "兵/Soldier (Pawn)", "", "兵/Soldier (Pawn)"],
-        ["", "炮/Cannon", "", "", "", "", "", "炮/Cannon", ""],
-        ["", "", "", "", "", "", "", "", ""],
-        ["俥/Chariot (Rook)", "傌/Horse (Knight)", "相/Elephant (Bishop)", "仕/Advisor", "帥/General (King)", "仕/Advisor", "相/Elephant (Bishop)", "傌/Horse (Knight)", "俥/Chariot (Rook)"]
-    ]);
+    const [piecesAll, setPiecesAll] = useState([]);
+    const [piecesAllMatrix, setPiecesAllMatrix] = useState([]);
     const [highlightedPiece, setHighlightedPiece] = useState("");
     const [chosenPiece, setChosenPiece] = useState("");
     const [chosenDestination, setChosenDestination] = useState("");
 
+    useEffect(() => {
+        loadPiecesAll();
+        populateBoard();
+    }, [piecesAll]);
+
+    function loadPiecesAll() {
+        API.getPiecesAll().then(res => {
+            setPiecesAll(res.data);
+            console.log("All pieces set");
+        }).catch(err => console.log(err));
+    }
+
     function populateBoard() {
         // Populate Board with All Pieces (where !isTaken) Saved in DB
+        console.log("Populating Board...");
+        let pieceIndex = 0;
+        let populateBoardMatrix = [];
+        if (piecesAll.length) {
+            for (let i = 0; i < 10; i++) {
+                populateBoardMatrix[i] = [];
+                for (let j = 0; j < 9; j++) {
+                    if (piecesAll[pieceIndex].row === i && piecesAll[pieceIndex].column === j) {
+                        if (!piecesAll[pieceIndex].isTaken) {
+                            piecesAll[pieceIndex].character = translatePiece(piecesAll[pieceIndex].type, piecesAll[pieceIndex].side);
+                            populateBoardMatrix[i][j] = piecesAll[pieceIndex];
+                        }
+                        pieceIndex++;
+                    } else {
+                        populateBoardMatrix[i][j] = null;
+                    }
+                }
+            }
+        }
+        setPiecesAllMatrix(populateBoardMatrix);
+        console.log("Finished Populating Board");
+    }
+
+    function translatePiece(pieceType, pieceSide) {
+        console.log(`Piece to be translated is of type ${pieceType} and on side ${pieceSide}`);
+        if (pieceSide === "Dad") {
+            switch (pieceType) {
+                case "Rook":
+                    return "車";
+                case "Knight":
+                    return "馬";
+                case "Bishop":
+                    return "象";
+                case "Advisor":
+                    return "士";
+                case "King":
+                    return "將";
+                case "Cannon":
+                    return "砲";
+                case "Pawn":
+                    return "卒";
+            }
+        } else {
+            switch (pieceType) {
+                case "Rook":
+                    return "俥";
+                case "Knight":
+                    return "傌";
+                case "Bishop":
+                    return "相";
+                case "Advisor":
+                    return "仕";
+                case "King":
+                    return "帥";
+                case "Cannon":
+                    return "炮";
+                case "Pawn":
+                    return "兵";
+            }
+        }
     }
 
     function highlightPiece(pieceID) {
@@ -47,7 +110,24 @@ function Board(props) {
         // @TODO: Ascertain Move Legality Based on Rule Computation
         // since nothing will trying prevent from clicking an illegal move destination cell
     }
-    
+
+    function movePiece(id, destinationRow, destinationColumn) {
+        API.updatePiece(id, {
+            row: destinationRow,
+            column: destinationColumn
+        }).then(res => {
+            console.log("Piece row/column updated");
+        }).catch(err => console.log(err));
+    }
+
+    function takePiece(id) {
+        API.updatePiece(id, {
+            isTaken: true
+        }).then(res => {
+            console.log("Piece taken");
+        }).catch(err => console.log(err));
+    }
+
     return (
         <Container>
             <div>
@@ -55,7 +135,8 @@ function Board(props) {
                 Chosen Piece: {chosenPiece}<br />
                 Chosen Destination: {chosenDestination}
             </div>
-            {piecesAll.map((row, index) => (
+            {piecesAllMatrix.length ?
+            piecesAllMatrix.map((row, index) => (
                 <div>
                     <Row rowIndex={index} pieces={row} highlightPiece={highlightPiece} clickCell={clickCell} />
                     {/* Add 楚河/Chu River boundary in the middle of the 象棋/Elephant Chess board */}
@@ -67,7 +148,7 @@ function Board(props) {
                     </div>
                     : ""}
                 </div>
-            ))}
+            )) : ""}
         </Container>
     );
 }
