@@ -46,14 +46,24 @@ function Row(props) {
     return (
         <div className="row justify-content-center g-0">
             {props.pieces.map((piece, index) => (
-                <div name={`r${props.rowIndex}c${index}`} className="col-1">
+                <div key={index} className="col-1">
                     { piece ?
-                    <Paper id={`r${props.rowIndex}c${index}`} elevation={10} className={classes.root} onClick={handleClick} onMouseEnter={handleHover} square>
-                        <Avatar className={`${classes.piece} ${piece.side === "Dad" ? classes.DadPiece : classes.myPiece}`}>
+                    <Paper elevation={10}
+                        className={classes.root}
+                        square>
+                        <Avatar id={piece.id}
+                            className={`${classes.piece}
+                            ${piece.side === "Dad" ?
+                            classes.DadPiece : classes.myPiece}`}
+                            onClick={handleClick}
+                            onMouseEnter={handleHover}>
                             {piece.character}
                         </Avatar>
                     </Paper> :
-                    <Paper id={`r${props.rowIndex}c${index}`} className={classes.empty} onClick={handleClick} square />}
+                    <Paper id={`${props.rowIndex},${index}`}
+                        className={classes.empty}
+                        onClick={handleClick}
+                        square />}
                 </div>
             ))}
         </div>
