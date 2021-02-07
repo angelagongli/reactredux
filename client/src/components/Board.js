@@ -8,35 +8,38 @@ function Board(props) {
     const [piecesAll, setPiecesAll] = useState([]);
     const [piecesAllMatrix, setPiecesAllMatrix] = useState([]);
     const [highlightedPiece, setHighlightedPiece] = useState("");
-    const [chosenPiece, setChosenPiece] = useState("");
-    const [chosenDestination, setChosenDestination] = useState("");
+    const [chosenPiece, setChosenPiece] = useState({});
+    const [chosenDestination, setChosenDestination] = useState({});
+    const [message, setMessage] = useState("");
 
     useEffect(() => {
         loadPiecesAll();
-        populateBoard();
-    }, [piecesAll]);
+        if (Object.entries(chosenPiece).length && Object.entries(chosenDestination).length) {
+            makeMove();
+        }
+    }, [chosenDestination]);
 
     function loadPiecesAll() {
         API.getPiecesAll().then(res => {
             setPiecesAll(res.data);
             console.log("All pieces set");
+            populateBoard(res.data);
         }).catch(err => console.log(err));
     }
 
-    function populateBoard() {
+    function populateBoard(piecesAll) {
         // Populate Board with All Pieces (where !isTaken) Saved in DB
         console.log("Populating Board...");
         let pieceIndex = 0;
         let populateBoardMatrix = [];
         if (piecesAll.length) {
+            let piecesAllToPopulate = piecesAll.filter(piece => !piece.isTaken);
             for (let i = 0; i < 10; i++) {
                 populateBoardMatrix[i] = [];
                 for (let j = 0; j < 9; j++) {
-                    if (piecesAll[pieceIndex].row === i && piecesAll[pieceIndex].column === j) {
-                        if (!piecesAll[pieceIndex].isTaken) {
-                            piecesAll[pieceIndex].character = translatePiece(piecesAll[pieceIndex].type, piecesAll[pieceIndex].side);
-                            populateBoardMatrix[i][j] = piecesAll[pieceIndex];
-                        }
+                    if (piecesAllToPopulate[pieceIndex] && piecesAllToPopulate[pieceIndex].row === i && piecesAllToPopulate[pieceIndex].column === j) {
+                        piecesAllToPopulate[pieceIndex].character = translatePiece(piecesAllToPopulate[pieceIndex].type, piecesAllToPopulate[pieceIndex].side);
+                        populateBoardMatrix[i][j] = piecesAllToPopulate[pieceIndex];
                         pieceIndex++;
                     } else {
                         populateBoardMatrix[i][j] = null;
@@ -94,21 +97,72 @@ function Board(props) {
 
     function clickCell(cellID) {
         // @TODO: Make Chosen Piece/Chosen Destination into Action Dispatched to Update Global State
-        if (chosenPiece) {
-            if (chosenPiece === cellID) {
-                setChosenPiece("");
+        if (Object.entries(chosenPiece).length) {
+            // Chosen Piece Is Set => Determine Chosen Destination Cell's Position/Contained Piece and Make Move to Chosen Destination
+            if (cellID.includes(",")) {
+                // Chosen destination is empty and cellID is the cell's "row,column"
+                let [ chosenDestinationRow, chosenDestinationColumn ] = cellID.split(",");
+                setChosenDestination({
+                    row: chosenDestinationRow,
+                    column: chosenDestinationColumn
+                });
+                setMessage("Making move to empty destination...");
             } else {
-                setChosenDestination(cellID);
-                makeMove();
+                // Chosen destination contains piece and cellID is just the piece's ID
+                if (chosenPiece.id === parseInt(cellID)) {
+                    // Release Chosen Piece/Set ChosenPiece State Back to Empty
+                    setChosenPiece({});
+                    setMessage("Chosen Piece Released");
+                } else {
+                    let pieceToTake = piecesAll.find(piece => piece.id === parseInt(cellID));
+                    console.log("Piece to take: " + JSON.stringify(pieceToTake));
+                    setChosenDestination(pieceToTake);
+                    setMessage("Making move taking piece...");
+                }
             }
         } else {
-            setChosenPiece(cellID);
+            // Chosen Piece Not Yet Set => Set ChosenPiece State
+            if (cellID.includes(",")) {
+                // Chosen "piece" is empty, but non-empty piece must be chosen before empty destination can be chosen
+                setMessage("Please choose your piece!");
+            } else {
+                // Chosen piece is indeed non-empty piece and cellID is just the piece's ID
+                let pieceToMove = piecesAll.find(piece => piece.id === parseInt(cellID));
+                console.log("Piece to move: " + JSON.stringify(pieceToMove));
+                setChosenPiece(pieceToMove);
+                setMessage(`Piece ${pieceToMove.name} at row ${pieceToMove.row}/column ${pieceToMove.column} chosen by ${pieceToMove.side}!`);
+            }
         }
     }
 
     function makeMove() {
         // @TODO: Ascertain Move Legality Based on Rule Computation
         // since nothing will trying prevent from clicking an illegal move destination cell
+        console.log(`Move submitted to be verified legal: Piece ${JSON.stringify(chosenPiece)} to ${JSON.stringify(chosenDestination)}`);
+        // Move submission to DB once the move has been verified legal
+        
+        // On Legal Move: Insert Move Into DB
+        let move = {
+            pieceID: chosenPiece.id,
+            mover: chosenPiece.side,
+            startRow: chosenPiece.row,
+            startColumn: chosenPiece.column,
+            destinationRow: chosenDestination.row,
+            destinationColumn: chosenDestination.column,
+            pieceTaken: chosenDestination.id ? true : false,
+            pieceTakenID: chosenDestination.id ? chosenDestination.id : null,
+            GameId: 1
+        }
+        API.makeMove(move).then(res => {
+            console.log("Move made, now show on board");
+            setMessage("Move made!");
+            movePiece(chosenPiece.id, chosenDestination.row, chosenDestination.column);
+        }).catch(err => console.log(err));
+
+        // On Illegal Move: Set Chosen Piece/Chosen Destination Back to Empty, Explain Rule Making Move Illegal
+        // setChosenPiece({});
+        // setChosenDestination({});
+        // setMessage(`Move is illegal because of the ${""} rule!`);
     }
 
     function movePiece(id, destinationRow, destinationColumn) {
@@ -117,6 +171,12 @@ function Board(props) {
             column: destinationColumn
         }).then(res => {
             console.log("Piece row/column updated");
+            if (chosenDestination.id) {
+                takePiece(chosenDestination.id);
+            } else {
+                setChosenPiece({});
+                setChosenDestination({});
+            }
         }).catch(err => console.log(err));
     }
 
@@ -125,6 +185,8 @@ function Board(props) {
             isTaken: true
         }).then(res => {
             console.log("Piece taken");
+            setChosenPiece({});
+            setChosenDestination({});
         }).catch(err => console.log(err));
     }
 
@@ -132,12 +194,13 @@ function Board(props) {
         <Container>
             <div>
                 Highlighted Piece: {highlightedPiece}<br />
-                Chosen Piece: {chosenPiece}<br />
-                Chosen Destination: {chosenDestination}
+                Chosen Piece: {JSON.stringify(chosenPiece)}<br />
+                Chosen Destination: {JSON.stringify(chosenDestination)}<br />
+                Message: {message}
             </div>
             {piecesAllMatrix.length ?
             piecesAllMatrix.map((row, index) => (
-                <div>
+                <div key={index}>
                     <Row rowIndex={index} pieces={row} highlightPiece={highlightPiece} clickCell={clickCell} />
                     {/* Add 楚河/Chu River boundary in the middle of the 象棋/Elephant Chess board */}
                     {index === 4 ?
