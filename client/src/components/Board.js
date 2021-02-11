@@ -2,18 +2,23 @@ import React, { useState, useEffect } from "react";
 import { Container } from '@material-ui/core';
 import Row from "./Row";
 import API from "../utils/API";
+import enforceRule from "../utils/enforceRule";
 
 function Board(props) {
     // Will have to make way to translate your piece's name/side saved in DB into the correct traditional character
     const [piecesAll, setPiecesAll] = useState([]);
     const [piecesAllMatrix, setPiecesAllMatrix] = useState([]);
-    const [highlightedPiece, setHighlightedPiece] = useState("");
+    const [highlightedPiece, setHighlightedPiece] = useState({});
+    const [highlightedLegalAll, setHighlightedLegalAll] = useState({});
     const [chosenPiece, setChosenPiece] = useState({});
     const [chosenDestination, setChosenDestination] = useState({});
     const [message, setMessage] = useState("");
 
     useEffect(() => {
         loadPiecesAll();
+        // My logic will only ever allow my chosenDestination to be set once my chosenPiece has been set,
+        // but what if some oversight managing to set chosenDestination without chosenPiece? Keep my condition as it is,
+        // since makeMove is only well-defined when my chosenPiece as well as my chosenDestination are set.
         if (Object.entries(chosenPiece).length && Object.entries(chosenDestination).length) {
             makeMove();
         }
@@ -92,7 +97,9 @@ function Board(props) {
 
     function highlightPiece(pieceID) {
         // Keep Legal Move Highlighting in Local State
-        setHighlightedPiece(pieceID);
+        let pieceToHighlight = piecesAll.find(piece => piece.id === parseInt(pieceID));
+        setHighlightedPiece(pieceToHighlight);
+        setHighlightedLegalAll(enforceRule.makeLegalMoveObject(pieceToHighlight, piecesAll));
     }
 
     function clickCell(cellID) {
@@ -139,6 +146,7 @@ function Board(props) {
         // @TODO: Ascertain Move Legality Based on Rule Computation
         // since nothing will trying prevent from clicking an illegal move destination cell
         console.log(`Move submitted to be verified legal: Piece ${JSON.stringify(chosenPiece)} to ${JSON.stringify(chosenDestination)}`);
+        let isLegal = enforceRule.verifyMoveLegality(chosenPiece, chosenDestination, piecesAll);
         // Move submission to DB once the move has been verified legal
         
         // On Legal Move: Insert Move Into DB
@@ -193,7 +201,7 @@ function Board(props) {
     return (
         <Container>
             <div>
-                Highlighted Piece: {highlightedPiece}<br />
+                Highlighted Piece: {JSON.stringify(highlightedPiece)}<br />
                 Chosen Piece: {JSON.stringify(chosenPiece)}<br />
                 Chosen Destination: {JSON.stringify(chosenDestination)}<br />
                 Message: {message}
@@ -201,7 +209,13 @@ function Board(props) {
             {piecesAllMatrix.length ?
             piecesAllMatrix.map((row, index) => (
                 <div key={index}>
-                    <Row rowIndex={index} pieces={row} highlightPiece={highlightPiece} clickCell={clickCell} />
+                    <Row rowIndex={index}
+                        pieces={row}
+                        highlightedPiece={highlightedPiece}
+                        highlightedLegalAll={highlightedLegalAll[index]}
+                        chosenPiece={chosenPiece}
+                        highlightPiece={highlightPiece}
+                        clickCell={clickCell} />
                     {/* Add 楚河/Chu River boundary in the middle of the 象棋/Elephant Chess board */}
                     {index === 4 ?
                     <div className="row justify-content-center g-0">
