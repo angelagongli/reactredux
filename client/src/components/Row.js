@@ -5,7 +5,8 @@ import { makeStyles } from '@material-ui/core/styles';
 const useStyles = makeStyles(() => ({
     root: {
         width: "100%",
-        height: 100
+        height: 100,
+        backgroundColor: "lightcyan"
     },
     empty: {
         width: "100%",
@@ -29,6 +30,27 @@ const useStyles = makeStyles(() => ({
     myPiece: {
         color: "red",
         borderColor: "red"
+    },
+    highlightedPieceCell: {
+        width: "100%",
+        height: 100,
+        borderWidth: 1,
+        borderStyle: "solid",
+        borderColor: "red",
+        backgroundColor: "yellow"
+    },
+    chosenPieceCell: {
+        width: "100%",
+        height: 100,
+        borderWidth: 1,
+        borderStyle: "solid",
+        borderColor: "red",
+        backgroundColor: "pink"
+    },
+    highlightedLegalAll: {
+        width: "100%",
+        height: 100,
+        backgroundColor: "yellow"
     }
 }));
 
@@ -49,7 +71,16 @@ function Row(props) {
                 <div key={index} className="col-1">
                     { piece ?
                     <Paper elevation={10}
-                        className={classes.root}
+                        className={(props.chosenPiece.row === props.rowIndex &&
+                            props.chosenPiece.column === index) ?
+                            classes.chosenPieceCell :
+                            (props.highlightedPiece.row === props.rowIndex &&
+                            props.highlightedPiece.column === index) ?
+                            classes.highlightedPieceCell :
+                            (props.highlightedLegalAll &&
+                            props.highlightedLegalAll.includes(index)) ?
+                            classes.highlightedLegalAll :
+                            classes.root}
                         square>
                         <Avatar id={piece.id}
                             className={`${classes.piece}
@@ -61,7 +92,9 @@ function Row(props) {
                         </Avatar>
                     </Paper> :
                     <Paper id={`${props.rowIndex},${index}`}
-                        className={classes.empty}
+                        className={(props.highlightedLegalAll &&
+                            props.highlightedLegalAll.includes(index)) ?
+                            classes.highlightedLegalAll : classes.empty}
                         onClick={handleClick}
                         square />}
                 </div>
