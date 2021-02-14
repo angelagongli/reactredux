@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from
 import API from "../utils/API";
 
 function MoveHistory(props) {
+    // Will have to make way to render our move history in the correct 象棋/Elephant Chess 棋谱/notation
     const [piecesAllLookup, setPiecesAllLookup] = useState({});
     const [movesAll, setMovesAll] = useState([]);
 
@@ -29,6 +30,9 @@ function MoveHistory(props) {
         API.getMovesAllByGame(1).then(res => {
             setMovesAll(res.data);
             console.log("All moves in ongoing game set");
+            if (res.data.length) {
+                props.pullMoveToReturn(res.data[0]);
+            }
         }).catch(err => console.log(err));
     }
 
