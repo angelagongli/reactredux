@@ -5,7 +5,9 @@ import API from "../utils/API";
 import enforceRule from "../utils/enforceRule";
 
 function Board(props) {
-    // Will have to make way to translate your piece's name/side saved in DB into the correct traditional character
+    // Will have to make way to keep track of our gameplay's progression/be able to
+    // Know when it is my turn, having made sure only my side's pieces are enabled
+    // So I am sure the chosen piece is mine to choose/the move is mine to make
     const [piecesAll, setPiecesAll] = useState([]);
     const [piecesAllMatrix, setPiecesAllMatrix] = useState([]);
     const [highlightedPiece, setHighlightedPiece] = useState({});
@@ -99,7 +101,7 @@ function Board(props) {
         // Keep Legal Move Highlighting in Local State
         let pieceToHighlight = piecesAll.find(piece => piece.id === parseInt(pieceID));
         setHighlightedPiece(pieceToHighlight);
-        setHighlightedLegalAll(enforceRule.makeLegalMoveObject(pieceToHighlight, piecesAll));
+        setHighlightedLegalAll(enforceRule.makeLegalMoveObject(pieceToHighlight, piecesAllMatrix));
     }
 
     function clickCell(cellID) {
@@ -146,7 +148,7 @@ function Board(props) {
         // @TODO: Ascertain Move Legality Based on Rule Computation
         // since nothing will trying prevent from clicking an illegal move destination cell
         console.log(`Move submitted to be verified legal: Piece ${JSON.stringify(chosenPiece)} to ${JSON.stringify(chosenDestination)}`);
-        let isLegal = enforceRule.verifyMoveLegality(chosenPiece, chosenDestination, piecesAll);
+        let isLegal = enforceRule.verifyMoveLegality(chosenPiece, chosenDestination, piecesAllMatrix);
         // Move submission to DB once the move has been verified legal
         
         // On Legal Move: Insert Move Into DB
