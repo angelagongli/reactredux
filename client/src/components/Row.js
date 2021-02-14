@@ -51,6 +51,19 @@ const useStyles = makeStyles(() => ({
         width: "100%",
         height: 100,
         backgroundColor: "yellow"
+    },
+    moveToReturnOrigin: {
+        width: "100%",
+        height: 100,
+        borderWidth: 10,
+        borderStyle: "solid",
+        borderColor: "cyan",
+        backgroundColor: "lightcyan"
+    },
+    moveToReturnDestination: {
+        width: "100%",
+        height: 100,
+        backgroundColor: "cyan"
     }
 }));
 
@@ -80,6 +93,9 @@ function Row(props) {
                             (props.highlightedLegalAll &&
                             props.highlightedLegalAll.includes(index)) ?
                             classes.highlightedLegalAll :
+                            (props.moveToReturnDestination.row === props.rowIndex &&
+                            props.moveToReturnDestination.column === index) ?
+                            classes.moveToReturnDestination :
                             classes.root}
                         square>
                         <Avatar id={piece.id}
@@ -94,7 +110,11 @@ function Row(props) {
                     <Paper id={`${props.rowIndex},${index}`}
                         className={(props.highlightedLegalAll &&
                             props.highlightedLegalAll.includes(index)) ?
-                            classes.highlightedLegalAll : classes.empty}
+                            classes.highlightedLegalAll :
+                            (props.moveToReturnOrigin.row === props.rowIndex &&
+                            props.moveToReturnOrigin.column === index) ?
+                            classes.moveToReturnOrigin :
+                            classes.empty}
                         onClick={handleClick}
                         square />}
                 </div>
