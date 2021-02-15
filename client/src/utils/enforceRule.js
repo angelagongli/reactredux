@@ -202,33 +202,57 @@ export default {
             // Check board boundary
             // Check obstruction
             for (let i = 0; i < 4; i++) {
-                if (legalMoveObject[piece.row + 2*(-1)**i]) {
-                    legalMoveObject[piece.row + 2*(-1)**i].push(piece.column + 1*(-1)**Math.ceil(i/2));
-                } else {
-                    legalMoveObject[piece.row + 2*(-1)**i] = [piece.column + 1*(-1)**Math.ceil(i/2)];
+                let rowA = piece.row + 2*(-1)**i;
+                let columnA = piece.column + 1*(-1)**Math.ceil(i/2);
+                if (rowA >= 0 && rowA < 10 && columnA >= 0 && columnA < 9) {
+                    if (piecesAllMatrix[piece.row + (-1)**i][piece.column]) {
+                        // Piece in Knight's Path is Obstructing "Knight's Leg"/蹩马腿
+                    } else if (piecesAllMatrix[rowA][columnA] &&
+                        piecesAllMatrix[rowA][columnA].side === piece.side) {
+                        // Own Piece is Obstruction
+                    } else if (legalMoveObject[rowA]) {
+                        legalMoveObject[rowA].push(columnA);
+                    } else {
+                        legalMoveObject[rowA] = [columnA];
+                    }
                 }
-                if (legalMoveObject[piece.row + 1*(-1)**i]) {
-                    legalMoveObject[piece.row + 1*(-1)**i].push(piece.column + 2*(-1)**Math.ceil(i/2));
-                } else {
-                    legalMoveObject[piece.row + 1*(-1)**i] = [piece.column + 2*(-1)**Math.ceil(i/2)];
+                let rowB = piece.row + 1*(-1)**i;
+                let columnB = piece.column + 2*(-1)**Math.ceil(i/2);
+                if (rowB >= 0 && rowB < 10 && columnB >= 0 && columnB < 9) {
+                    if (piecesAllMatrix[piece.row][piece.column + (-1)**Math.ceil(i/2)]) {
+                        // Piece in Knight's Path is Obstructing "Knight's Leg"/蹩马腿
+                    } else if (piecesAllMatrix[rowB][columnB] &&
+                        piecesAllMatrix[rowB][columnB].side === piece.side) {
+                        // Own Piece is Obstruction
+                    } else if (legalMoveObject[rowB]) {
+                        legalMoveObject[rowB].push(columnB);
+                    } else {
+                        legalMoveObject[rowB] = [columnB];
+                    }
                 }
             }
         } else if (piece.type === "Bishop") {
             // Keeping my piece's position relative to the river in mind,
             // Since the Elephant must always stay on its own side
-            if (piece.side === "Dad") {
+            for (let i = 0; i < 4; i++) {
+                let row = piece.row + 2*(-1)**i;
+                let column = piece.column + 2*(-1)**Math.ceil(i/2);
                 // Check board boundary
                 // Check obstruction
-                legalMoveObject[piece.row - 2] = [piece.column - 2, piece.column + 2];
-                if (piece.row < 4) {
-                    // Elephant Has Space from Border of the River
-                    legalMoveObject[piece.row + 2] = [piece.column - 2, piece.column + 2];
-                }
-            } else {
-                legalMoveObject[piece.row + 2] = [piece.column - 2, piece.column + 2];
-                if (piece.row > 5) {
-                    // Elephant Has Space from Border of the River
-                    legalMoveObject[piece.row - 2] = [piece.column - 2, piece.column + 2];
+                if (((piece.side === "Dad" && row >= 0 && row < 5) ||
+                (piece.side === "Me" && row > 4 && row < 10))
+                // Elephant Has Space from Border of the River
+                && column >= 0 && column < 9) {
+                    if (piecesAllMatrix[piece.row + (-1)**i][piece.column + (-1)**Math.ceil(i/2)]) {
+                        // Piece in Elephant's Path is "Blocking the Elephant's Eye"/塞象眼
+                    } else if (piecesAllMatrix[row][column] &&
+                        piecesAllMatrix[row][column].side === piece.side) {
+                        // Own Piece is Obstruction
+                    } else if (legalMoveObject[row]) {
+                        legalMoveObject[row].push(column);
+                    } else {
+                        legalMoveObject[row] = [column];
+                    }
                 }
             }
         } else if (piece.type === "Advisor") {
