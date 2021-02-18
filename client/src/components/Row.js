@@ -93,8 +93,9 @@ function Row(props) {
                             (props.highlightedLegalAll &&
                             props.highlightedLegalAll.includes(index)) ?
                             classes.highlightedLegalAll :
-                            (props.moveToReturnDestination.row === props.rowIndex &&
-                            props.moveToReturnDestination.column === index) ?
+                            (props.moveToReturn &&
+                            props.moveToReturn.destinationRow === props.rowIndex &&
+                            props.moveToReturn.destinationColumn === index) ?
                             classes.moveToReturnDestination :
                             classes.root}
                         square>
@@ -111,8 +112,9 @@ function Row(props) {
                         className={(props.highlightedLegalAll &&
                             props.highlightedLegalAll.includes(index)) ?
                             classes.highlightedLegalAll :
-                            (props.moveToReturnOrigin.row === props.rowIndex &&
-                            props.moveToReturnOrigin.column === index) ?
+                            (props.moveToReturn &&
+                            props.moveToReturn.startRow === props.rowIndex &&
+                            props.moveToReturn.startColumn === index) ?
                             classes.moveToReturnOrigin :
                             classes.empty}
                         onClick={handleClick}
