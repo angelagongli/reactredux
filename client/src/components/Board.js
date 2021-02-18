@@ -138,8 +138,13 @@ function Board(props) {
                 // Chosen piece is indeed non-empty piece and cellID is just the piece's ID
                 let pieceToMove = piecesAll.find(piece => piece.id === parseInt(cellID));
                 console.log("Piece to move: " + JSON.stringify(pieceToMove));
-                setChosenPiece(pieceToMove);
-                setMessage(`Piece ${pieceToMove.name} at row ${pieceToMove.row}/column ${pieceToMove.column} chosen by ${pieceToMove.side}!`);
+                if (pieceToMove.side === props.moveToReturn.mover) {
+                    // Chosen piece belongs to the mover having just made move
+                    setMessage(`Please wait for your turn, it is ${props.moveToReturn.mover === "Dad" ? "my" : "Dad's"} turn to return ${props.moveToReturn.mover === "Dad" ? "Dad's" : "my"} move!`);
+                } else {
+                    setChosenPiece(pieceToMove);
+                    setMessage(`Piece ${pieceToMove.name} at row ${pieceToMove.row}/column ${pieceToMove.column} chosen by ${pieceToMove.side}!`);
+                }
             }
         }
     }
@@ -151,28 +156,31 @@ function Board(props) {
         let isLegal = enforceRule.verifyMoveLegality(chosenPiece, chosenDestination, piecesAllMatrix);
         // Move submission to DB once the move has been verified legal
         
-        // On Legal Move: Insert Move Into DB
-        let move = {
-            pieceID: chosenPiece.id,
-            mover: chosenPiece.side,
-            startRow: chosenPiece.row,
-            startColumn: chosenPiece.column,
-            destinationRow: chosenDestination.row,
-            destinationColumn: chosenDestination.column,
-            pieceTaken: chosenDestination.id ? true : false,
-            pieceTakenID: chosenDestination.id ? chosenDestination.id : null,
-            GameId: 1
+        if (isLegal) {
+            // On Legal Move: Insert Move Into DB
+            let move = {
+                pieceID: chosenPiece.id,
+                mover: chosenPiece.side,
+                startRow: chosenPiece.row,
+                startColumn: chosenPiece.column,
+                destinationRow: chosenDestination.row,
+                destinationColumn: chosenDestination.column,
+                pieceTaken: chosenDestination.id ? true : false,
+                pieceTakenID: chosenDestination.id ? chosenDestination.id : null,
+                GameId: 1
+            }
+            API.makeMove(move).then(res => {
+                console.log("Move made, now show on board");
+                setMessage("Move made!");
+                movePiece(chosenPiece.id, chosenDestination.row, chosenDestination.column);
+                props.pullMoveSubmission(move);
+            }).catch(err => console.log(err));
+        } else {
+            // On Illegal Move: Set Chosen Piece/Chosen Destination Back to Empty, Explain Rule Making Move Illegal
+            setChosenPiece({});
+            setChosenDestination({});
+            setMessage(`Move is illegal because of the ${enforceRule.returnRuleExplanation(chosenPiece, chosenDestination, piecesAllMatrix)} rule!`);
         }
-        API.makeMove(move).then(res => {
-            console.log("Move made, now show on board");
-            setMessage("Move made!");
-            movePiece(chosenPiece.id, chosenDestination.row, chosenDestination.column);
-        }).catch(err => console.log(err));
-
-        // On Illegal Move: Set Chosen Piece/Chosen Destination Back to Empty, Explain Rule Making Move Illegal
-        // setChosenPiece({});
-        // setChosenDestination({});
-        // setMessage(`Move is illegal because of the ${""} rule!`);
     }
 
     function movePiece(id, destinationRow, destinationColumn) {
@@ -206,7 +214,8 @@ function Board(props) {
                 Highlighted Piece: {JSON.stringify(highlightedPiece)}<br />
                 Chosen Piece: {JSON.stringify(chosenPiece)}<br />
                 Chosen Destination: {JSON.stringify(chosenDestination)}<br />
-                Message: {message}
+                Message: {message}<br />
+                Move to Make: {props.moveToReturn.mover === "Dad" ? "I Am" : "Dad Is"} Up
             </div>
             {piecesAllMatrix.length ?
             piecesAllMatrix.map((row, index) => (
@@ -216,6 +225,7 @@ function Board(props) {
                         highlightedPiece={highlightedPiece}
                         highlightedLegalAll={highlightedLegalAll[index]}
                         chosenPiece={chosenPiece}
+                        moveToReturn={props.moveToReturn}
                         highlightPiece={highlightPiece}
                         clickCell={clickCell} />
                     {/* Add 楚河/Chu River boundary in the middle of the 象棋/Elephant Chess board */}
