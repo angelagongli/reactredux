@@ -11,7 +11,7 @@ function MoveHistory(props) {
     useEffect(() => {
         loadPiecesAll();
         loadMovesAll();
-    }, [movesAll]);
+    }, [props.moveSubmission]);
 
     function loadPiecesAll() {
         // Move always has only one Piece and can have only one PieceTaken =>
