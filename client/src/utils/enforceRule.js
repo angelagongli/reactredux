@@ -310,6 +310,96 @@ export default {
         // Special Rule:
         // King must not directly face King
 
+        // The special situation can only arise when King moves into the opposing
+        // King's column/King faces the opposing King and their only middle piece
+        // Moves horizontally/diagonally, clearing the path for the King to directly
+        // Face the opposing King
+        if (piece.type === "King") {
+            // Check: Am I moving into the opposing King's column/directly facing the opposing King?
+            let opposingKing = null;
+            for (let i = (piece.side === "Dad" ? 7 : 0);
+                i < (piece.side === "Dad" ? 10 : 3);
+                i++) {
+                for (let j = 3; j < 6; j++) {
+                    if (piecesAllMatrix[i][j] && piecesAllMatrix[i][j].type === "King") {
+                        opposingKing = piecesAllMatrix[i][j];
+                        break;
+                    }
+                }
+            }
+            console.log("Opposing King: " + JSON.stringify(opposingKing));
+            for (const legalMoveRow in legalMoveObject) {
+                if (legalMoveObject[legalMoveRow].includes(opposingKing.column)) {
+                    // Based on the King's defined movement of one orthogonal step,
+                    // Only one move in the King's legalMoveObject can ever be
+                    // Moving into the opposing King's column
+                    let middlePieceCount = 0;
+                    for (let i = (piece.side === "Dad" ? parseInt(legalMoveRow) + 1 : opposingKing.row + 1);
+                        i < (piece.side === "Dad" ? opposingKing.row : parseInt(legalMoveRow));
+                        i++) {
+                        if (piecesAllMatrix[i][opposingKing.column]) {
+                            middlePieceCount++;
+                            break;
+                        }
+                    }
+                    if (middlePieceCount === 0) {
+                        // Move leads to situation where King is directly facing King =>
+                        // Splice just the move in the row of the King's legalMoveObject
+                        // Leading to the special situation
+                        let opposingKingColumnIndex = legalMoveObject[legalMoveRow].indexOf(opposingKing.column);
+                        legalMoveObject[legalMoveRow].splice(opposingKingColumnIndex, 1);
+                    }
+                    break;
+                }
+            }
+        } else {
+            // Pull Dad's/my King's column to check for situation of King facing King,
+            // Then their only middle piece's horizontal/diagonal move
+            // Opening up the board and leading to King directly facing King
+            let DadKing = null;
+            let myKing = null;
+            for (let i = 0; i < piecesAllMatrix.length; i++) {
+                if (i > 2 && i < 7) {
+                    // Row Does Not Intersect with Dad's/My "Palace"
+                    continue;
+                }
+                for (let j = 3; j < 6; j++) {
+                    if (piecesAllMatrix[i][j] && piecesAllMatrix[i][j].type === "King") {
+                        if (piecesAllMatrix[i][j].side === "Dad") {
+                            DadKing = piecesAllMatrix[i][j];
+                        } else {
+                            myKing = piecesAllMatrix[i][j];
+                        }
+                        break;
+                    }
+                }
+            }
+            // Does King Face King/Is Piece in the Middle of King's Column?
+            if (piece.column === DadKing.column && DadKing.column === myKing.column &&
+                piece.row > DadKing.row && piece.row < myKing.row) {
+                let middlePieceCount = 0;
+                for (let i = DadKing.row + 1; i < myKing.row; i++) {
+                    if (piecesAllMatrix[i][DadKing.column]) {
+                        middlePieceCount++;
+                    }
+                    if (middlePieceCount > 1) {
+                        break;
+                    }
+                }
+                if (middlePieceCount === 1) {
+                    // Piece is the only middle piece between Dad's King and my King =>
+                    // Piece must stay in the King's column
+                    for (const legalMoveRow in legalMoveObject) {
+                        if (legalMoveObject[legalMoveRow].includes(DadKing.column)) {
+                            legalMoveObject[legalMoveRow] = [DadKing.column];
+                        } else {
+                            delete legalMoveObject[legalMoveRow];
+                        }
+                    }
+                }
+            }
+        }
+
         // Rule Governing Endgame:
         // Cap on Perpetual Chasing/Checking
 
@@ -338,6 +428,11 @@ export default {
         // Be careful to always return only the most relevant rule making the move illegal:
         // Based on the move being analyzed, one rule always beats the rest
 
+        // On Special Rule Keeping King from Facing King:
+        // Does piece in King's column move horizontally/diagonally to clear the
+        // King's column so King directly faces King/Does King's horizontal
+        // Move into the opposing King's column break the special rule?
+
         // Conventional (Movement-Based) Rule:
         if (chosenPiece.type === "Pawn") {
             if (chosenPiece.side === "Dad") {
@@ -348,7 +443,11 @@ export default {
                         chosenDestinationColumn === chosenPiece.column + 1)) ||
                         (chosenDestinationRow === chosenPiece.row + 1 &&
                         chosenDestinationColumn === chosenPiece.column)) {
-                        return "Own Piece is Obstruction";
+                        if (piecesAllMatrix[chosenDestinationRow][chosenDestinationColumn]) {
+                            return "Own Piece is Obstruction";
+                        } else {
+                            return "Pawn Must Stay in King's Column Because King Must Not Directly Face King";
+                        }
                     } else {
                         return "Pawn Can Only Move One Step Forward/One Step Horizontally Once Having Crossed the River";
                     }
@@ -368,7 +467,11 @@ export default {
                         chosenDestinationColumn === chosenPiece.column + 1)) ||
                         (chosenDestinationRow === chosenPiece.row - 1 &&
                         chosenDestinationColumn === chosenPiece.column)) {
-                        return "Own Piece is Obstruction";
+                        if (piecesAllMatrix[chosenDestinationRow][chosenDestinationColumn]) {
+                            return "Own Piece is Obstruction";
+                        } else {
+                            return "Pawn Must Stay in King's Column Because King Must Not Directly Face King";
+                        }
                     } else {
                         return "Pawn Can Only Move One Step Forward/One Step Horizontally Once Having Crossed the River";
                     }
@@ -451,9 +554,15 @@ export default {
                                     if (piecesAllMatrix[chosenPiece.row][i].side === chosenPiece.side) {
                                         return "Own Piece is Obstruction";
                                     } else {
+                                        if (isSpecialRuleBroken()) {
+                                            return "Cannon Must Stay in King's Column Because King Must Not Directly Face King";
+                                        }
                                         return "Cannon Can Only Take Piece Having Jumped Only One Middle Piece";
                                     }
                                 } else {
+                                    if (isSpecialRuleBroken()) {
+                                        return "Cannon Must Stay in King's Column Because King Must Not Directly Face King";
+                                    }
                                     return "Cannon Can Only Jump Middle Piece When Taking Piece";
                                 }
                             }
@@ -478,9 +587,15 @@ export default {
                                     if (piecesAllMatrix[chosenPiece.row][i].side === chosenPiece.side) {
                                         return "Own Piece is Obstruction";
                                     } else {
+                                        if (isSpecialRuleBroken()) {
+                                            return "Cannon Must Stay in King's Column Because King Must Not Directly Face King";
+                                        }
                                         return "Cannon Can Only Take Piece Having Jumped Only One Middle Piece";
                                     }
                                 } else {
+                                    if (isSpecialRuleBroken()) {
+                                        return "Cannon Must Stay in King's Column Because King Must Not Directly Face King";
+                                    }
                                     return "Cannon Can Only Jump Middle Piece When Taking Piece";
                                 }
                             }
@@ -497,6 +612,9 @@ export default {
                         }
                     }
                 }
+                if (isSpecialRuleBroken()) {
+                    return "Cannon Must Stay in King's Column Because King Must Not Directly Face King";
+                }
             }
         } else if (chosenPiece.type === "Rook") {
             if (chosenDestinationRow !== chosenPiece.row &&
@@ -507,7 +625,7 @@ export default {
                     for (let i = chosenPiece.row + 1; i < 10; i++) {
                         if (piecesAllMatrix[i][chosenPiece.column]) {
                             if (chosenDestinationRow === i) {
-                                // Closest Piece in Rook's Path Being the
+                                // Closest Piece in Rook's Vertical Path Being the
                                 // Chosen Destination in Illegal Move Must Be Own Piece
                                 return "Own Piece is Obstruction";
                             } else {
@@ -519,7 +637,7 @@ export default {
                     for (let i = chosenPiece.row - 1; i >= 0; i--) {
                         if (piecesAllMatrix[i][chosenPiece.column]) {
                             if (chosenDestinationRow === i) {
-                                // Closest Piece in Rook's Path Being the
+                                // Closest Piece in Rook's Vertical Path Being the
                                 // Chosen Destination in Illegal Move Must Be Own Piece
                                 return "Own Piece is Obstruction";
                             } else {
@@ -533,11 +651,21 @@ export default {
                     for (let i = chosenPiece.column + 1; i < 9; i++) {
                         if (piecesAllMatrix[chosenPiece.row][i]) {
                             if (chosenDestinationColumn === i) {
-                                // Closest Piece in Rook's Path Being the
-                                // Chosen Destination in Illegal Move Must Be Own Piece
-                                return "Own Piece is Obstruction";
+                                // Closest Piece in Rook's Horizontal Path Being the
+                                // Chosen Destination in Illegal Move Must Break Special Rule/Be Own Piece
+                                if (piecesAllMatrix[chosenPiece.row][i].side === chosenPiece.side) {
+                                    return "Own Piece is Obstruction";
+                                } else {
+                                    // Rook's Horizontal Move Clears Path of King's Column
+                                    // Leading to King Directly Facing King
+                                    return "Rook Must Stay in King's Column Because King Must Not Directly Face King";
+                                }
                             } else {
-                                return "Rook Cannot Jump";
+                                if (isSpecialRuleBroken()) {
+                                    return "Rook Must Stay in King's Column Because King Must Not Directly Face King";
+                                } else {
+                                    return "Rook Cannot Jump";
+                                }
                             }
                         }
                     }
@@ -545,14 +673,27 @@ export default {
                     for (let i = chosenPiece.column - 1; i >= 0; i--) {
                         if (piecesAllMatrix[chosenPiece.row][i]) {
                             if (chosenDestinationColumn === i) {
-                                // Closest Piece in Rook's Path Being the
-                                // Chosen Destination in Illegal Move Must Be Own Piece
-                                return "Own Piece is Obstruction";
+                                // Closest Piece in Rook's Horizontal Path Being the
+                                // Chosen Destination in Illegal Move Must Break Special Rule/Be Own Piece
+                                if (piecesAllMatrix[chosenPiece.row][i].side === chosenPiece.side) {
+                                    return "Own Piece is Obstruction";
+                                } else {
+                                    // Rook's Horizontal Move Clears Path of King's Column
+                                    // Leading to King Directly Facing King
+                                    return "Rook Must Stay in King's Column Because King Must Not Directly Face King";
+                                }
                             } else {
-                                return "Rook Cannot Jump";
+                                if (isSpecialRuleBroken()) {
+                                    return "Rook Must Stay in King's Column Because King Must Not Directly Face King";
+                                } else {
+                                    return "Rook Cannot Jump";
+                                }
                             }
                         }
                     }
+                }
+                if (isSpecialRuleBroken()) {
+                    return "Rook Must Stay in King's Column Because King Must Not Directly Face King";
                 }
             }
         } else if (chosenPiece.type === "Knight") {
@@ -566,8 +707,13 @@ export default {
                             return "Piece in Knight's Path is Obstructing \"Knight's Leg\"/蹩马腿";
                         } else {
                             // Computed Unobstructed RowA/ColumnA Inside Board Boundary Being the
-                            // Chosen Destination in Illegal Move Must Contain Own Piece
-                            return "Own Piece is Obstruction";
+                            // Chosen Destination in Illegal Move Must Break Special Rule/Contain Own Piece
+                            if (piecesAllMatrix[rowA][columnA] &&
+                                piecesAllMatrix[rowA][columnA].side === chosenPiece.side) {
+                                return "Own Piece is Obstruction";
+                            } else {
+                                return "Knight Must Stay in King's Column Because King Must Not Directly Face King";
+                            }
                         }
                     }
                 }
@@ -580,8 +726,13 @@ export default {
                             return "Piece in Knight's Path is Obstructing \"Knight's Leg\"/蹩马腿";
                         } else {
                             // Computed Unobstructed RowB/ColumnB Inside Board Boundary Being the
-                            // Chosen Destination in Illegal Move Must Contain Own Piece
-                            return "Own Piece is Obstruction";
+                            // Chosen Destination in Illegal Move Must Break Special Rule/Contain Own Piece
+                            if (piecesAllMatrix[rowB][columnB] &&
+                                piecesAllMatrix[rowB][columnB].side === chosenPiece.side) {
+                                return "Own Piece is Obstruction";
+                            } else {
+                                return "Knight Must Stay in King's Column Because King Must Not Directly Face King";
+                            }
                         }
                     }
                 }
@@ -604,8 +755,13 @@ export default {
                         } else {
                             // Computed Unobstructed Row/Column Inside Board Boundary
                             // On Elephant's Own Side of the River Being the
-                            // Chosen Destination in Illegal Move Must Contain Own Piece
-                            return "Own Piece is Obstruction";
+                            // Chosen Destination in Illegal Move Must Break Special Rule/Contain Own Piece
+                            if (piecesAllMatrix[row][column] &&
+                                piecesAllMatrix[row][column].side === chosenPiece.side) {
+                                return "Own Piece is Obstruction";
+                            } else {
+                                return "Elephant Must Stay in King's Column Because King Must Not Directly Face King";
+                            }
                         }
                     }
                 }
@@ -621,14 +777,19 @@ export default {
                     if (chosenPiece.side === "Dad") {
                         if (chosenPiece.row === 1 ||
                             // Chosen Piece is in Central Space in the "Palace" =>
-                            // Computed Row/Column Being the
-                            // Chosen Destination in Illegal Move Must Contain Own Piece
+                            // Computed Row/Column Being the Chosen Destination in
+                            // Illegal Move Must Break Special Rule/Contain Own Piece
                             (chosenDestinationRow === 1 &&
                             chosenDestinationColumn === 4)
-                            // Central Space in the "Palace" Being the
-                            // Chosen Destination in Illegal Move Must Contain Own Piece
+                            // Central Space in the "Palace" Being the Chosen Destination in
+                            // Illegal Move Must Break Special Rule/Contain Own Piece
                             ) {
-                            return "Own Piece is Obstruction";
+                            if (piecesAllMatrix[row][column] &&
+                                piecesAllMatrix[row][column].side === chosenPiece.side) {
+                                return "Own Piece is Obstruction";
+                            } else {
+                                return "Advisor Must Stay in King's Column Because King Must Not Directly Face King";
+                            }
                         } else {
                             // Chosen Piece That is Not in the Central Space in the "Palace" and
                             // Computed Non-Central Row/Column Being the Chosen Destination in Illegal Move =>
@@ -638,14 +799,19 @@ export default {
                     } else {
                         if (chosenPiece.row === 8 ||
                             // Chosen Piece is in Central Space in the "Palace" =>
-                            // Computed Row/Column Being the
-                            // Chosen Destination in Illegal Move Must Contain Own Piece
+                            // Computed Row/Column Being the Chosen Destination in
+                            // Illegal Move Must Break Special Rule/Contain Own Piece
                             (chosenDestinationRow === 8 &&
                             chosenDestinationColumn === 4)
-                            // Central Space in the "Palace" Being the
-                            // Chosen Destination in Illegal Move Must Contain Own Piece
+                            // Central Space in the "Palace" Being the Chosen Destination in
+                            // Illegal Move Must Break Special Rule/Contain Own Piece
                             ) {
-                            return "Own Piece is Obstruction";
+                            if (piecesAllMatrix[row][column] &&
+                                piecesAllMatrix[row][column].side === chosenPiece.side) {
+                                return "Own Piece is Obstruction";
+                            } else {
+                                return "Advisor Must Stay in King's Column Because King Must Not Directly Face King";
+                            }
                         } else {
                             // Chosen Piece That is Not in the Central Space in the "Palace" and
                             // Computed Non-Central Row/Column Being the Chosen Destination in Illegal Move =>
@@ -667,14 +833,66 @@ export default {
                     (chosenPiece.side === "Me" && row > 6 && row < 10)) &&
                     column > 2 && column < 6) {
                         // Computed Row/Column Inside the "Palace" Boundary Being the
-                        // Chosen Destination in Illegal Move Must Contain Own Piece
-                        return "Own Piece is Obstruction";
+                        // Chosen Destination in Illegal Move Must Break Special Rule/Contain Own Piece
+                        if (piecesAllMatrix[row][column] &&
+                            piecesAllMatrix[row][column].side === chosenPiece.side) {
+                            return "Own Piece is Obstruction";
+                        } else {
+                            return "King Must Not Directly Face King";
+                        }
                     } else {
                         return "King Must Always Stay in the \"Palace\"";
                     }
                 }
             }
             return "King Can Only Move One Step Orthogonally";
+        }
+
+        // Special Rule Check on Horizontal/Diagonal Move Clearing the King's Column:
+        function isSpecialRuleBroken() {
+            // Pull Dad's/my King's column to check for situation of King facing King,
+            // Then their only middle piece's horizontal/diagonal move
+            // Opening up the board and leading to King directly facing King
+            let DadKing = null;
+            let myKing = null;
+            for (let i = 0; i < piecesAllMatrix.length; i++) {
+                if (i > 2 && i < 7) {
+                    // Row Does Not Intersect with Dad's/My "Palace"
+                    continue;
+                }
+                for (let j = 3; j < 6; j++) {
+                    if (piecesAllMatrix[i][j] && piecesAllMatrix[i][j].type === "King") {
+                        if (piecesAllMatrix[i][j].side === "Dad") {
+                            DadKing = piecesAllMatrix[i][j];
+                        } else {
+                            myKing = piecesAllMatrix[i][j];
+                        }
+                        break;
+                    }
+                }
+            }
+            // Does King Face King/Is Piece in the Middle of King's Column?
+            if (chosenPiece.column === DadKing.column && DadKing.column === myKing.column &&
+                chosenPiece.row > DadKing.row && chosenPiece.row < myKing.row &&
+                chosenPiece.column !== chosenDestinationColumn) {
+                // Piece in King's column is making horizontal/diagonal move from King's column =>
+                // Check on piece being the only middle piece in the King's column
+                let middlePieceCount = 0;
+                for (let i = DadKing.row + 1; i < myKing.row; i++) {
+                    if (piecesAllMatrix[i][DadKing.column]) {
+                        middlePieceCount++;
+                    }
+                    if (middlePieceCount > 1) {
+                        break;
+                    }
+                }
+                if (middlePieceCount === 1) {
+                    // Chosen piece is the only middle piece between Dad's King and my King =>
+                    // Piece must stay in the King's column, so return the Special Rule in rule explanation
+                    return true;
+                }
+            }
+            return false;
         }
     }
 };
