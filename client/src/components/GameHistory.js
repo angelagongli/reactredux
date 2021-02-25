@@ -1,10 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Container, Paper } from '@material-ui/core';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 import API from "../utils/API";
+
+const useStyles = makeStyles({
+    root: {
+      width: '100%'
+    },
+    container: {
+      maxHeight: 500
+    }
+});
 
 function GameHistory(props) {
     const [gamesAll, setGamesAll] = useState([]);
+    const [gamesAllTablePage, setGamesAllTablePage] = useState(0);
+    const [rowCountPerTablePage, setRowCountPerTablePage] = useState(10);
+    const classes = useStyles();
 
     useEffect(() => {
         loadGamesAll();
@@ -17,10 +30,19 @@ function GameHistory(props) {
         }).catch(err => console.log(err));
     }
 
+    const handleChangePage = (event, newPage) => {
+        setGamesAllTablePage(newPage);
+    };
+    
+    const handleChangeRowCountPerTablePage = (event) => {
+        setRowCountPerTablePage(+event.target.value);
+        setGamesAllTablePage(0);
+    };
+
     return (
-        <Container>
-            <TableContainer component={Paper}>
-                <Table>
+        <Container className={classes.root}>
+            <TableContainer component={Paper} className={classes.container}>
+                <Table stickyHeader>
                     <TableHead>
                         <TableRow>
                             <TableCell>ID</TableCell>
@@ -32,7 +54,8 @@ function GameHistory(props) {
                     </TableHead>
                     <TableBody>
                         {gamesAll.length ?
-                        gamesAll.map(game => (
+                        gamesAll.slice(gamesAllTablePage * rowCountPerTablePage,
+                            gamesAllTablePage * rowCountPerTablePage + rowCountPerTablePage).map(game => (
                             <TableRow key={game.id}>
                                 <TableCell>{game.id}</TableCell>
                                 <TableCell align="right">{game.name}</TableCell>
@@ -44,6 +67,15 @@ function GameHistory(props) {
                     </TableBody>
                 </Table>
             </TableContainer>
+            <TablePagination
+                rowsPerPageOptions={[10, 25, 100]}
+                component="div"
+                count={gamesAll.length}
+                rowsPerPage={rowCountPerTablePage}
+                page={gamesAllTablePage}
+                onChangePage={handleChangePage}
+                onChangeRowsPerPage={handleChangeRowCountPerTablePage}
+            />
         </Container>
     );
 }
