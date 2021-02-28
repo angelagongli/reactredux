@@ -403,6 +403,13 @@ export default {
         // Rule Governing Endgame:
         // Cap on Perpetual Chasing/Checking
 
+        // Let the endgame rule be completely up to Dad and me, since perpetual
+        // Chasing/checking does not depend on the current state of the board but
+        // Comes from Dad's/my combined move history, and "perpetual" is up to us to define
+
+        // Once defined, our endgame rule will have to be implemented in backward-looking part of
+        // Dad's idea of forward-looking 象棋/Elephant Chess engine based on Own King Safety Index.
+
         return legalMoveObject;
     },
     verifyMoveLegality: function(chosenPiece, chosenDestination, piecesAllMatrix) {
