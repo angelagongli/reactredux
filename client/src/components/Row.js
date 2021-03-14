@@ -1,4 +1,6 @@
 import React from "react";
+import { useSelector } from 'react-redux';
+import { selectMoveToReturn } from '../features/legalMoveSubmission/legalMoveSubmissionSlice';
 import { Paper, Avatar } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 
@@ -68,6 +70,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 function Row(props) {
+    const moveToReturn = useSelector(selectMoveToReturn);
     const classes = useStyles();
     
     function handleClick(event) {
@@ -93,9 +96,9 @@ function Row(props) {
                             (props.highlightedLegalAll &&
                             props.highlightedLegalAll.includes(index)) ?
                             classes.highlightedLegalAll :
-                            (props.moveToReturn &&
-                            props.moveToReturn.destinationRow === props.rowIndex &&
-                            props.moveToReturn.destinationColumn === index) ?
+                            (moveToReturn &&
+                            moveToReturn.destinationRow === props.rowIndex &&
+                            moveToReturn.destinationColumn === index) ?
                             classes.moveToReturnDestination :
                             classes.root}
                         square>
@@ -112,9 +115,9 @@ function Row(props) {
                         className={(props.highlightedLegalAll &&
                             props.highlightedLegalAll.includes(index)) ?
                             classes.highlightedLegalAll :
-                            (props.moveToReturn &&
-                            props.moveToReturn.startRow === props.rowIndex &&
-                            props.moveToReturn.startColumn === index) ?
+                            (moveToReturn &&
+                            moveToReturn.startRow === props.rowIndex &&
+                            moveToReturn.startColumn === index) ?
                             classes.moveToReturnOrigin :
                             classes.empty}
                         onClick={handleClick}
