@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from 'react-redux';
+import { setMoveToReturn, selectMoveToReturn } from '../features/legalMoveSubmission/legalMoveSubmissionSlice';
 import { Container, Paper } from '@material-ui/core';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
@@ -13,17 +15,19 @@ const useStyles = makeStyles({
     }
 });
 
-function MoveHistory(props) {
+function MoveHistory() {
     // Will have to make way to render our move history in the correct 象棋/Elephant Chess 棋谱/notation
     const [piecesAllLookup, setPiecesAllLookup] = useState({});
     const [movesAll, setMovesAll] = useState([]);
     const [movesAllTablePage, setMovesAllTablePage] = useState(0);
     const [rowCountPerTablePage, setRowCountPerTablePage] = useState(10);
+    const moveToReturn = useSelector(selectMoveToReturn);
+    const dispatch = useDispatch();
     const classes = useStyles();
 
     useEffect(() => {
         loadMovesAll();
-    }, [props.moveSubmission]);
+    }, [moveToReturn]);
 
     function loadMovesAll() {
         if (Object.entries(piecesAllLookup).length) {
@@ -31,7 +35,7 @@ function MoveHistory(props) {
                 if (res.data.length) {
                     setMovesAll(notateMovesAll(res.data, piecesAllLookup));
                     console.log("All moves in ongoing game set");
-                    props.pullMoveToReturn(res.data[0]);
+                    dispatch(setMoveToReturn(res.data[0]));
                 }
             }).catch(err => console.log(err));
         } else {
@@ -48,7 +52,7 @@ function MoveHistory(props) {
                     if (res.data.length) {
                         setMovesAll(notateMovesAll(res.data, pieceIDNameLookup));
                         console.log("All moves in ongoing game set");
-                        props.pullMoveToReturn(res.data[0]);
+                        dispatch(setMoveToReturn(res.data[0]));
                     }
                 });
             }).catch(err => console.log(err));
