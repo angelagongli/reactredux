@@ -13,7 +13,7 @@ const useStyles = makeStyles({
     }
 });
 
-function GameHistory(props) {
+function GameHistory() {
     const [gamesAll, setGamesAll] = useState([]);
     const [gamesAllTablePage, setGamesAllTablePage] = useState(0);
     const [rowCountPerTablePage, setRowCountPerTablePage] = useState(10);
