@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from 'react-redux';
+import { setMoveToReturn, selectMoveToReturn } from '../features/legalMoveSubmission/legalMoveSubmissionSlice';
 import { Container } from '@material-ui/core';
 import Row from "./Row";
 import API from "../utils/API";
 import enforceRule from "../utils/enforceRule";
 
-function Board(props) {
+function Board() {
     // Will have to make way to keep track of our gameplay's progression/be able to
     // Know when it is my turn, having made sure only my side's pieces are enabled
     // So I am sure the chosen piece is mine to choose/the move is mine to make
@@ -15,6 +17,8 @@ function Board(props) {
     const [chosenPiece, setChosenPiece] = useState({});
     const [chosenDestination, setChosenDestination] = useState({});
     const [message, setMessage] = useState("");
+    const moveToReturn = useSelector(selectMoveToReturn);
+    const dispatch = useDispatch();
 
     useEffect(() => {
         loadPiecesAll();
@@ -138,9 +142,9 @@ function Board(props) {
                 // Chosen piece is indeed non-empty piece and cellID is just the piece's ID
                 let pieceToMove = piecesAll.find(piece => piece.id === parseInt(cellID));
                 console.log("Piece to move: " + JSON.stringify(pieceToMove));
-                if (pieceToMove.side === props.moveToReturn.mover) {
+                if (pieceToMove.side === moveToReturn.mover) {
                     // Chosen piece belongs to the mover having just made move
-                    setMessage(`Please wait for your turn, it is ${props.moveToReturn.mover === "Dad" ? "my" : "Dad's"} turn to return ${props.moveToReturn.mover === "Dad" ? "Dad's" : "my"} move!`);
+                    setMessage(`Please wait for your turn, it is ${moveToReturn.mover === "Dad" ? "my" : "Dad's"} turn to return ${moveToReturn.mover === "Dad" ? "Dad's" : "my"} move!`);
                 } else {
                     setChosenPiece(pieceToMove);
                     setMessage(`Piece ${pieceToMove.name} at row ${pieceToMove.row}/column ${pieceToMove.column} chosen by ${pieceToMove.side}!`);
@@ -173,7 +177,7 @@ function Board(props) {
                 console.log("Move made, now show on board");
                 setMessage("Move made!");
                 movePiece(chosenPiece.id, chosenDestination.row, chosenDestination.column);
-                props.pullMoveSubmission(move);
+                dispatch(setMoveToReturn(move));
             }).catch(err => console.log(err));
         } else {
             // On Illegal Move: Set Chosen Piece/Chosen Destination Back to Empty, Explain Rule Making Move Illegal
@@ -215,7 +219,7 @@ function Board(props) {
                 Chosen Piece: {JSON.stringify(chosenPiece)}<br />
                 Chosen Destination: {JSON.stringify(chosenDestination)}<br />
                 Message: {message}<br />
-                Move to Make: {props.moveToReturn.mover === "Dad" ? "I Am" : "Dad Is"} Up
+                Move to Make: {moveToReturn.mover === "Dad" ? "I Am" : "Dad Is"} Up
             </div>
             {piecesAllMatrix.length ?
             piecesAllMatrix.map((row, index) => (
@@ -225,7 +229,6 @@ function Board(props) {
                         highlightedPiece={highlightedPiece}
                         highlightedLegalAll={highlightedLegalAll[index]}
                         chosenPiece={chosenPiece}
-                        moveToReturn={props.moveToReturn}
                         highlightPiece={highlightPiece}
                         clickCell={clickCell} />
                     {/* Add 楚河/Chu River boundary in the middle of the 象棋/Elephant Chess board */}
