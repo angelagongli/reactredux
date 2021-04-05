@@ -60,8 +60,35 @@ function MoveHistory() {
     }
 
     function computeNotation(move, piecesAllLookup) {
-        return `${move.id} ${move.mover} ${piecesAllLookup[move.pieceID]}:
-        ${move.startRow},${move.startColumn} to ${move.destinationRow},${move.destinationColumn}`;
+        let originalFile;
+        let movementDirection;
+        let newFileRankTraversal;
+        if (move.mover === "Dad") {
+            originalFile = move.startColumn + 1;
+            if (move.startRow === move.destinationRow) {
+                movementDirection = ".";
+            } else {
+                movementDirection = (move.startRow < move.destinationRow) ? "+" : "-";
+            }
+            if (move.startColumn === move.destinationColumn) {
+                newFileRankTraversal = Math.abs(move.destinationRow - move.startRow);
+            } else {
+                newFileRankTraversal = move.destinationColumn + 1;
+            }
+        } else {
+            originalFile = 9 - move.startColumn;
+            if (move.startRow === move.destinationRow) {
+                movementDirection = ".";
+            } else {
+                movementDirection = (move.startRow < move.destinationRow) ? "-" : "+";
+            }
+            if (move.startColumn === move.destinationColumn) {
+                newFileRankTraversal = Math.abs(move.destinationRow - move.startRow);
+            } else {
+                newFileRankTraversal = 9 - move.destinationColumn;
+            }
+        }
+        return `${piecesAllLookup[move.pieceID]}${originalFile}${movementDirection}${newFileRankTraversal}`;
     }
 
     function notateMovesAll(rawMovesAll, piecesAllLookup) {
