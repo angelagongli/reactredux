@@ -17,7 +17,6 @@ const useStyles = makeStyles({
 
 function MoveHistory() {
     // Will have to make way to render our move history in the correct 象棋/Elephant Chess 棋谱/notation
-    const [piecesAllLookup, setPiecesAllLookup] = useState({});
     const [movesAll, setMovesAll] = useState([]);
     const [movesAllTablePage, setMovesAllTablePage] = useState(0);
     const [rowCountPerTablePage, setRowCountPerTablePage] = useState(10);
@@ -30,36 +29,20 @@ function MoveHistory() {
     }, [moveToReturn]);
 
     function loadMovesAll() {
-        if (Object.entries(piecesAllLookup).length) {
-            API.getMovesAllByGame(1).then(res => {
-                if (res.data.length) {
-                    setMovesAll(notateMovesAll(res.data, piecesAllLookup));
-                    console.log("All moves in ongoing game set");
-                    dispatch(setMoveToReturn(res.data[0]));
-                }
-            }).catch(err => console.log(err));
-        } else {
-            // Move always has only one Piece and can have only one PieceTaken =>
-            // Keep Move model/Piece model connected by PieceID/Piece Name lookup, not M:M model relationship
-            API.getPiecesAll().then(res => {
-                let pieceIDNameLookup = {};
-                for (const piece of res.data) {
-                    pieceIDNameLookup[piece.id] = piece.name;
-                }
-                setPiecesAllLookup(pieceIDNameLookup);
-                console.log("All pieces in PieceID/Piece Name Lookup set");
-                API.getMovesAllByGame(1).then(res => {
-                    if (res.data.length) {
-                        setMovesAll(notateMovesAll(res.data, pieceIDNameLookup));
-                        console.log("All moves in ongoing game set");
-                        dispatch(setMoveToReturn(res.data[0]));
-                    }
-                });
-            }).catch(err => console.log(err));
-        }
+        // Move always has only one Piece and can have only one PieceTaken =>
+        // Keep Move model/Piece model connected by 1:1 Move/Piece model relationship,
+        // Then define PieceTaken Alias of Piece model so Move model/Piece model
+        // Are kept connected by 1:1 Move/PieceTaken Alias of Piece model relationship as well
+        API.getMovesAllByGame(1).then(res => {
+            if (res.data.length) {
+                setMovesAll(notateMovesAll(res.data));
+                console.log("All moves in ongoing game set");
+                dispatch(setMoveToReturn(res.data[0]));
+            }
+        }).catch(err => console.log(err));
     }
 
-    function computeNotation(move, piecesAllLookup) {
+    function computeNotation(move) {
         let originalFile;
         let movementDirection;
         let newFileRankTraversal;
@@ -88,22 +71,22 @@ function MoveHistory() {
                 newFileRankTraversal = 9 - move.destinationColumn;
             }
         }
-        return `${piecesAllLookup[move.pieceID]}${originalFile}${movementDirection}${newFileRankTraversal}`;
+        return `${move.Piece.name}${originalFile}${movementDirection}${newFileRankTraversal}`;
     }
 
-    function notateMovesAll(rawMovesAll, piecesAllLookup) {
+    function notateMovesAll(rawMovesAll) {
         let notatedMovesAll = [];
         for (let i = (rawMovesAll.length % 2 === 0 ? 0 : -1); i < rawMovesAll.length; i += 2) {
             if (i === -1) {
                 notatedMovesAll.push({
                     index: Math.ceil(rawMovesAll.length/2),
-                    move: computeNotation(rawMovesAll[0], piecesAllLookup)
+                    move: computeNotation(rawMovesAll[0])
                 });
             } else {
                 notatedMovesAll.push({
                     index: Math.ceil(rawMovesAll.length/2) - Math.ceil(i/2),
-                    move: computeNotation(rawMovesAll[i + 1], piecesAllLookup),
-                    response: computeNotation(rawMovesAll[i], piecesAllLookup)
+                    move: computeNotation(rawMovesAll[i + 1]),
+                    response: computeNotation(rawMovesAll[i])
                 });
             }
         }
