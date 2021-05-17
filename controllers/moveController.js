@@ -3,6 +3,11 @@ const db = require("../models");
 module.exports = {
     findAll: function(req, res) {
         db.Move.findAll({
+            include: [
+                {
+                    model: db.Piece
+                }
+            ],
             order: [['createdAt', 'DESC']]
         }).then(dbMovesAll => {
             res.json(dbMovesAll);
@@ -10,6 +15,11 @@ module.exports = {
     },
     findAllByGame: function(req, res) {
         db.Move.findAll({
+            include: [
+                {
+                    model: db.Piece
+                }
+            ],
             where: { GameId: req.params.id },
             order: [['createdAt', 'DESC']]
         }).then(dbMovesInGameAll => {
