@@ -163,14 +163,14 @@ function Board() {
         if (isLegal) {
             // On Legal Move: Insert Move Into DB
             let move = {
-                pieceID: chosenPiece.id,
+                PieceId: chosenPiece.id,
                 mover: chosenPiece.side,
                 startRow: chosenPiece.row,
                 startColumn: chosenPiece.column,
                 destinationRow: chosenDestination.row,
                 destinationColumn: chosenDestination.column,
                 pieceTaken: chosenDestination.id ? true : false,
-                pieceTakenID: chosenDestination.id ? chosenDestination.id : null,
+                PieceTakenId: chosenDestination.id ? chosenDestination.id : null,
                 GameId: 1
             }
             API.makeMove(move).then(res => {
